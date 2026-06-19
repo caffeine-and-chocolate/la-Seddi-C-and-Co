@@ -3,17 +3,20 @@ const mysql = require('mysql2');
 const bcrypt = require('bcryptjs');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
-
-
+const fs = require('fs');
 const path = require('path');
+
+let ca = process.env.DB_SSL_CA || null;
+
+if (ca && ca.includes('\\n')) ca = ca.replace(/\\n/g, '\n');
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
+  port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
-  ssl: { rejectUnauthorized: true },
+  ssl: ca ? { ca } : undefined,
   waitForConnections: true,
   connectionLimit: 5,
   connectTimeout: 15000
@@ -28,8 +31,7 @@ pool.getConnection((err, conn) => {
   }
 });
 
-module.exports = pool; // or use pool.query(...) in your routes
-
+module.exports = pool; 
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
