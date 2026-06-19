@@ -1,0 +1,99 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fdf8f0;
+  padding: 0.5rem 1rem;
+}
+
+.nav-logo {
+  height: 50px;       /* adjust height to fit navbar */
+  width: auto;        /* keeps proportions */
+  object-fit: contain; /* ensures it scales nicely */
+  margin-top: 0;       /* tweak if you want it closer to top */
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  margin: 0;
+}
+
+.nav-links li {
+  margin-left: 1rem;
+}
+
+.nav-links a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.navbar .logo {
+  color: #fff;
+  font-weight: bold;
+}
+
+.navbar .nav-links {
+  list-style: none;
+  display: flex;
+}
+
+.navbar .nav-links li {
+  margin-left: 1rem;
+}
+
+.navbar .nav-links a {
+  color: black;
+  text-decoration: none;
+}
+
+.hero {
+  text-align: center;
+  padding: 2rem;
+  background: #f4f4f4;
+}
+
+.highlights {
+  display: flex;
+  justify-content: space-around;
+  padding: 2rem;
+}
+
+.highlight img {
+  width: 200px;
+  height: auto;
+  border-radius: 8px;
+}
+
+footer {
+  background: #fdf8f0;
+  color: black;
+  padding: 1rem;
+  text-align: center;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-links li {
+  display: inline;
+  margin: 0 0.5rem;
+}
+
+.footer-links a {
+  color: black;
+  text-decoration: none;
+}
+
+.social-links a {
+  color: black;
+  margin: 0 0.5rem;
+}

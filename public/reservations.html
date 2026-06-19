@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reservations - La’Seddi C & Co</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+  <div class="logo">
+    <img src="logo.png" alt="Restaurant Logo" class="nav-logo">
+  </div>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="menu.html">Menu</a></li>
+    <li><a href="branches.html">Branches</a></li>
+    <li><a href="events.html">Events</a></li>
+    <li><a href="promotions.html">Promotions</a></li>
+  </ul>
+</nav>
+
+  <main>
+    <h1>Make a Reservation</h1>
+    <form id="reservationForm">
+
+      <label>Name:</label>
+      <input type="text" name="reservationName" required>
+
+      <label>Email:</label>
+      <input type="email" name="email" required>
+
+      <label>Phone:</label>
+      <input type="tel" name="contactNumber" required>
+
+      <label for ="reservationDate">Date & Time:</label>
+      <input type="datetime-local" id="reservationDate" name="reservationDate" required>
+
+      <label>Number of people:</label>
+      <input type="number" name="quantity" min="1" required>
+
+      <label>Branch:</label>
+      <select name ="branch" required>
+        <option value="Midrand">Midrand</option>
+        <option value="Rosebank">Rosebank</option>
+        <option value="Hazelwood">Hazelwood</option>
+      </select>
+
+      <button type="submit">Reserve</button>
+    </form>
+  </main>
+
+  <footer>
+    <!-- Reuse footer -->
+  </footer>
+
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('reservationForm');
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = {
+      reservationName: document.querySelector('[name="reservationName"]').value,
+      contactNumber: document.querySelector('[name="contactNumber"]').value,
+      email: document.querySelector('[name="email"]').value,
+      reservationDate: document.getElementById('reservationDate').value,
+      quantity: document.querySelector('[name="quantity"]').value,
+      branch: document.querySelector('[name="branch"]').value
+    };
+
+    console.log('Form data being sent:', formData);
+
+    try {
+      const response = await fetch('reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      let message;
+      if (response.status === 409) {
+        message = await response.text();
+      } else if (response.ok) {
+        message = 'Reservation successful! Pending confirmation.';
+      } else {
+        message = 'Reservation failed. Please try again.';
+      }
+
+      alert(message + '\n\nYou will be redirected to the homepage in 3 seconds.');
+
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 3000);
+
+    } catch (error) {
+      alert('Reservation failed due to a network error.\n\nYou will be redirected to the homepage in 3 seconds.');
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 3000);
+    }
+  });
+});
+</script>
+
+<footer>
+    <p>&copy; 2026 La’Seddi C & Co</p>
+    <ul class="footer-links">
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="reviews.html">Reviews</a></li>
+      <li><a href="login.html">Staff</a></li>
+    </ul>
+    <div class="social-links">
+      <a href="https://www.instagram.com/_.sedds">Instagram</a> | <a href="https://www.tiktok.com/@pineapple.on.pizzaaaa">tiktok</a> | <a href="https://x.com/theee_sedds?s=11">Twitter</a>
+    </div>
+  </footer>
+</body>
+</html>

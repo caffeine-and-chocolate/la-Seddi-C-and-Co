@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact Us - La’Seddi C & Co</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">
+      <img src="logo.png" alt="Restaurant Logo" class="nav-logo">
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="menu.html">Menu</a></li>
+      <li><a href="reservations.html">Reservations</a></li>
+      <li><a href="branches.html">Branches</a></li>
+      <li><a href="events.html">Events</a></li>
+      <li><a href="promotions.html">Promotions</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <h1>Contact Us</h1>
+    <form id="contactForm">
+      <input type="text" name="name" placeholder="Your Name" required>
+      <input type="email" name="email" placeholder="Your Email" required>
+      <textarea name="message" placeholder="Your Message" required></textarea>
+      <button type="submit">Submit</button>
+    </form>
+  </main>
+
+  <footer><!-- Reuse footer --></footer>
+
+  <script>
+    document.getElementById('contactForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = {
+        name: e.target.name.value,
+        email: e.target.email.value,
+        message: e.target.message.value
+      };
+
+      const response = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        alert('Message submitted! You will be redirected to the homepage in 3 seconds.');
+        setTimeout(() => {
+          window.location.href = '/index.html';
+        }, 3000);
+        e.target.reset();
+      } else {
+        alert('Failed to submit message. Please try again.');
+      }
+    });
+  </script>
+
+  <footer>
+    <p>&copy; 2026 La’Seddi C & Co</p>
+    <ul class="footer-links">
+      <li><a href="about.html">About</a></li>
+      <li><a href="reviews.html">Reviews</a></li>
+      <li><a href="login.html">Staff</a></li>
+    </ul>
+    <div class="social-links">
+      <a href="https://www.instagram.com/_.sedds">Instagram</a> | <a href="https://www.tiktok.com/@pineapple.on.pizzaaaa">tiktok</a> | <a href="https://x.com/theee_sedds?s=11">Twitter</a>
+    </div>
+  </footer>
+</body>
+</html>

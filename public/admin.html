@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - La’Seddi C & Co</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <main>
+    <h1>Admin Dashboard</h1>
+
+    <!-- Reservations Section -->
+    <section id="reservations">
+      <h2>Reservations</h2>
+
+      <label for="branchSelect">Select Branch:</label>
+      <select id="branchSelect">
+        <option value="Midrand">Midrand</option>
+        <option value="Rosebank">Rosebank</option>
+        <option value="Hazelwood">Hazelwood</option>
+      </select>
+      <button id="loadReservations">Load Reservations</button>
+
+      <table border="1" id="reservationsTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Contact</th>
+            <th>Email</th>
+            <th>Date</th>
+            <th>Quantity</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Manage Events -->
+    <section id="manageEvents">
+      <h2>Manage Events</h2>
+      <form id="addEventForm">
+        <input type="text" name="eventName" placeholder="Event Name" required>
+        <input type="datetime-local" name="eventDate" required>
+        <textarea name="description" placeholder="Description" required></textarea>
+        <select name="branch" required>
+          <option value="Midrand">Midrand</option>
+          <option value="Rosebank">Rosebank</option>
+          <option value="Hazelwood">Hazelwood</option>
+        </select>
+        <button type="submit">Add Event</button>
+      </form>
+      <table border="1" id="eventsTable"></table>
+    </section>
+
+    <!-- Manage RSVPs -->
+    <section id="manageRsvps">
+      <h2>Manage RSVPs</h2>
+      <label>Branch:</label>
+      <select id="branchFilter">
+        <option value="Midrand">Midrand</option>
+        <option value="Rosebank">Rosebank</option>
+        <option value="Hazelwood">Hazelwood</option>
+      </select>
+      <label>Event:</label>
+      <select id="eventFilter"></select>
+      <button onclick="loadRsvps()">Load RSVPs</button>
+      <table border="1" id="rsvpsTable"></table>
+    </section>
+
+    <section id="managePromotions">
+      <h2>Manage Promotions</h2>
+      <form id="addPromotionForm">
+        <input type="text" name="title" placeholder="Promotion Title" required>
+        <textarea name="description" placeholder="Description" required></textarea>
+        <input type="datetime-local" name="startDate" required>
+        <input type="datetime-local" name="endDate" required>
+        <select name="branch" required>
+          <option value="Midrand">Midrand</option>
+          <option value="Rosebank">Rosebank</option>
+          <option value="Hazelwood">Hazelwood</option>
+        </select>
+        <button type="submit">Add Promotion</button>
+      </form>
+      <table border="1" id="promotionsTable"></table>
+    </section>
+
+    <section id="manageMenu">
+      <h2>Manage Menu</h2>
+      <form id="addMenuForm">
+        <input type="text" name="itemName" placeholder="Item Name" required>
+        <textarea name="description" placeholder="Description" required></textarea>
+        <input type="number" step="0.01" name="price" placeholder="Price" required>
+        <input type="text" name="category" placeholder="Category" required>
+        <button type="submit">Add Item</button>
+      </form>
+
+      <table border="1" id="menuTable"></table>
+    </section>
+
+    <section id="manageReviews">
+      <h2>Manage Reviews</h2>
+      <table border="1" id="reviewsTable"></table>
+    </section>
+
+    <section id="manageContacts">
+      <h2>Contact Messages</h2>
+      <table border="1" id="contactsTable"></table>
+    </section>
+
+  </main>
+
+  <script>
+    // ---------------- Reservations ----------------
+    document.getElementById('loadReservations').addEventListener('click', async () => {
+      const branch = document.getElementById('branchSelect').value;
+      const response = await fetch(`/api/admin/reservations/${branch}`);
+      const reservations = await response.json();
+
+      const tbody = document.querySelector('#reservationsTable tbody');
+      tbody.innerHTML = '';
+
+      reservations.forEach(r => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${r.reservationName}</td>
+          <td>${r.contactNumber}</td>
+          <td>${r.email}</td>
+          <td>${new Date(r.reservationDate).toLocaleString()}</td>
+          <td>${r.quantity}</td>
+          <td>${r.status}</td>
+          <td>
+            <button onclick="updateStatus(${r.id}, 'Confirmed')">Confirm</button>
+            <button onclick="updateStatus(${r.id}, 'Cancelled')">Cancel</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    });
+
+    async function updateStatus(id, status) {
+      const response = await fetch(`/api/admin/reservations/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (response.ok) {
+        alert(`Reservation ${status}`);
+        document.getElementById('loadReservations').click();
+      } else {
+        alert('Failed to update reservation');
+      }
+    }
+
+    // ---------------- Events ----------------
+    async function loadEvents() {
+      const response = await fetch('/api/events');
+      const events = await response.json();
+      const table = document.getElementById('eventsTable');
+      const eventFilter = document.getElementById('eventFilter');
+
+      table.innerHTML = '<tr><th>Name</th><th>Date</th><th>Description</th><th>Branch</th><th>Actions</th></tr>';
+      events.forEach(event => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${event.eventName}</td>
+          <td>${new Date(event.eventDate).toLocaleString()}</td>
+          <td>${event.description}</td>
+          <td>${event.branch}</td>
+          <td><button onclick="deleteEvent(${event.id})">Delete</button></td>
+        `;
+        table.appendChild(row);
+      });
+
+      eventFilter.innerHTML = '';
+      events.forEach(event => {
+        const option = document.createElement('option');
+        option.value = event.id;
+        option.textContent = event.eventName;
+        eventFilter.appendChild(option);
+      });
+    }
+
+    document.getElementById('addEventForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = {
+        eventName: e.target.eventName.value,
+        eventDate: e.target.eventDate.value,
+        description: e.target.description.value,
+        branch: e.target.branch.value
+      };
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (response.ok) {
+        alert('Event added');
+        loadEvents();
+        e.target.reset();
+      } else {
+        alert('Failed to add event');
+      }
+    });
+
+    async function deleteEvent(id) {
+      const response = await fetch(`/api/events/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        alert('Event deleted');
+        loadEvents();
+      } else {
+        alert('Failed to delete event');
+      }
+    }
+
+    // ---------------- RSVPs ----------------
+    async function loadRsvps() {
+      const branch = document.getElementById('branchFilter').value;
+      const eventId = document.getElementById('eventFilter').value;
+      const response = await fetch(`/api/rsvps/${branch}/${eventId}`);
+      const rsvps = await response.json();
+      const table = document.getElementById('rsvpsTable');
+
+      table.innerHTML = '<tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr>';
+      rsvps.forEach(rsvp => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${rsvp.name}</td>
+          <td>${rsvp.email}</td>
+          <td>${rsvp.phone}</td>
+          <td>${rsvp.status}</td>
+          <td>
+            <button onclick="updateRsvp(${rsvp.id}, 'Confirmed')">Confirm</button>
+            <button onclick="updateRsvp(${rsvp.id}, 'Cancelled')">Cancel</button>
+          </td>
+        `;
+        table.appendChild(row);
+      });
+    }
+
+    async function updateRsvp(id, status) {
+      const response = await fetch(`/api/rsvps/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (response.ok) {
+        alert(`RSVP ${status}`);
+        loadRsvps();
+      } else {
+        alert('Failed to update RSVP');
+      }
+    }
+
+    async function loadPromotions() {
+      const response = await fetch('/api/promotions');
+      const promotions = await response.json();
+      const table = document.getElementById('promotionsTable');
+
+      table.innerHTML = '<tr><th>Title</th><th>Description</th><th>Start</th><th>End</th><th>Branch</th><th>Actions</th></tr>';
+      promotions.forEach(promo => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${promo.title}</td>
+          <td>${promo.description}</td>
+          <td>${new Date(promo.startDate).toLocaleString()}</td>
+          <td>${new Date(promo.endDate).toLocaleString()}</td>
+          <td>${promo.branch}</td>
+          <td>
+            <button onclick="deletePromotion(${promo.id})">Delete</button>
+          </td>
+        `;
+        table.appendChild(row);
+      });
+    }
+
+    document.getElementById('addPromotionForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = {
+        title: e.target.title.value,
+        description: e.target.description.value,
+        startDate: e.target.startDate.value,
+        endDate: e.target.endDate.value,
+        branch: e.target.branch.value
+      };
+      const response = await fetch('/api/promotions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (response.ok) {
+        alert('Promotion added');
+        loadPromotions();
+        e.target.reset();
+      } else {
+        alert('Failed to add promotion');
+      }
+    });
+
+    async function deletePromotion(id) {
+      const response = await fetch(`/api/promotions/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        alert('Promotion deleted');
+        loadPromotions();
+      } else {
+        alert('Failed to delete promotion');
+      }
+    }
+
+    async function loadMenu() {
+      const response = await fetch('/api/menu');
+      const menuitems = await response.json();
+      const table = document.getElementById('menuTable');
+
+      table.innerHTML = '<tr><th>Name</th><th>Description</th><th>Price</th><th>Category</th><th>Actions</th></tr>';
+      
+      const categoryOrder = [
+        "Starters",
+        "Salads",
+        "Vegan",
+        "Vegetarian",
+        "Burgers",
+        "Poultry",
+        "Seafood",
+        "Grills",
+        "Combos",
+        "Sides",
+        "Extras",
+        "Desserts",
+        "Hot Beverages",
+        "Alcoholic Beverages"
+      ];
+
+      // Sort menu items by category order, then by itemName
+      menuitems.sort((a, b) => {
+        const indexA = categoryOrder.indexOf(a.category);
+        const indexB = categoryOrder.indexOf(b.category);
+
+        if (indexA !== -1 && indexB !== -1) {
+          if (indexA === indexB) {
+            return a.itemName.localeCompare(b.itemName);
+          }
+          return indexA - indexB;
+        }
+
+        if (indexA === -1 && indexB !== -1) return 1;
+        if (indexB === -1 && indexA !== -1) return -1;
+
+        return a.category.localeCompare(b.category);
+      });
+
+      // Render sorted items (only once)
+      menuitems.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.itemName}</td>
+          <td>${item.description}</td>
+          <td>R${Number(item.price).toFixed(2)}</td>
+          <td>${item.category}</td>
+          <td>
+            <button onclick="deleteMenuItem(${item.id})">Delete</button>
+          </td>
+        `;
+        table.appendChild(row);
+      });
+    }
+
+
+    async function deleteMenuItem(id) {
+      if (!confirm("Are you sure you want to delete this item?")) return;
+
+      const response = await fetch(`/api/menu/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        alert("Menu item deleted");
+        loadMenu(); // refresh table
+      } else {
+        alert("Failed to delete item");
+      }
+    }
+
+    document.getElementById('addMenuForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = {
+        itemName: e.target.itemName.value,
+        description: e.target.description.value,
+        price: parseFloat(e.target.price.value),
+        category: e.target.category.value
+      };
+      const response = await fetch('/api/menu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (response.ok) {
+        alert('Menu item added');
+        console.log('Reloading menu...');
+        loadMenu();
+        e.target.reset();
+      } else {
+        alert('Failed to add menu item');
+      }
+    });
+
+    async function loadReviewsAdmin() {
+      const response = await fetch('/api/reviews');
+      const reviews = await response.json();
+      const table = document.getElementById('reviewsTable');
+
+      table.innerHTML = '<tr><th>Customer</th><th>Rating</th><th>Feedback</th><th>Response</th><th>Actions</th></tr>';
+
+      reviews.forEach(r => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${r.customerName}</td>
+          <td>${'★'.repeat(r.rating)}</td>
+          <td>${r.feedback}</td>
+          <td>${r.adminResponse ? r.adminResponse : '<em>No response</em>'}</td>
+          <td>
+            <button onclick="deleteReview(${r.id})">Delete</button>
+            <button onclick="respondToReview(${r.id})">Respond</button>
+          </td>
+        `;
+        table.appendChild(row);
+      });
+    }
+
+    async function deleteReview(id) {
+      const response = await fetch(`/api/reviews/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        alert('Review deleted');
+        loadReviewsAdmin();
+      } else {
+        alert('Failed to delete review');
+      }
+    }
+
+    async function respondToReview(id) {
+      const adminResponse = prompt('Enter your response:');
+      if (!adminResponse) return;
+      const response = await fetch(`/api/reviews/${id}/response`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminResponse })
+      });
+      if (response.ok) {
+        alert('Response added');
+        loadReviewsAdmin();
+      } else {
+        alert('Failed to add response');
+      }
+    }
+
+    async function loadContacts() {
+      const response = await fetch('/api/contacts');
+      const contacts = await response.json();
+      const table = document.getElementById('contactsTable');
+
+      table.innerHTML = '<tr><th>Name</th><th>Email</th><th>Message</th><th>Date</th></tr>';
+
+      contacts.forEach(c => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${c.name}</td>
+          <td>${c.email}</td>
+          <td>${c.message}</td>
+          <td>${new Date(c.createdAt).toLocaleString()}</td>
+        `;
+        table.appendChild(row);
+      });
+    }
+
+    async function deleteContact(id) {
+      if (!confirm('Are you sure you want to delete this message?')) return;
+      const response = await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        alert('Message deleted');
+        loadContacts();
+      } else {
+        alert('Failed to delete message');
+      }
+    }
+
+    // Initial load
+    loadMenu();
+
+    // Initial load
+    loadPromotions();
+
+    // Initial load
+    loadEvents();
+
+    // Initial load
+    loadReviewsAdmin();
+
+    // Initial load
+    loadContacts();
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Menu - La’Seddi C & Co</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">
+      <img src="logo.png" alt="Restaurant Logo" class="nav-logo">
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="reservations.html">Reservations</a></li>
+      <li><a href="branches.html">Branches</a></li>
+      <li><a href="events.html">Events</a></li>
+      <li><a href="promotions.html">Promotions</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <h1>Our Menu</h1>
+    <div id="menuContainer" class="menu-container"></div>
+  </main>
+
+  <footer>
+    <!-- Reuse footer -->
+  </footer>
+
+  <script>
+    async function loadMenu() {
+      const response = await fetch('/api/menu');
+      const menuItems = await response.json();
+      const container = document.getElementById('menuContainer');
+
+      // Group items by category
+      const categories = {};
+      menuItems.forEach(item => {
+        const categoryName = (item.category || 'Uncategorized').trim();
+        if (!categories[categoryName]) {
+          categories[categoryName] = [];
+        }
+        categories[categoryName].push(item);
+      });
+
+      // Clear container
+      container.innerHTML = '';
+
+      // Custom category order
+      const categoryOrder = [
+        "Starters",
+        "Salads",
+        "Vegan",
+        "Vegetarian",
+        "Burgers",
+        "Poultry",
+        "Seafood",
+        "Grills",
+        "Combos",
+        "Sides",
+        "Extras",
+        "Desserts",
+        "Hot Beverages",
+        "Alcoholic Beverages"
+      ];
+
+      // Render categories in custom order
+      categoryOrder.forEach(category => {
+        if (categories[category]) {
+          const div = document.createElement('div');
+          div.classList.add('menu-category');
+          div.innerHTML = `<h2>${category}</h2>`;
+
+          // Sort items by name within each category
+          categories[category].sort((a, b) => a.itemName.localeCompare(b.itemName));
+
+          categories[category].forEach(item => {
+            const p = document.createElement('p');
+            p.textContent = `${item.itemName} - R${Number(item.price).toFixed(2)}`;
+            div.appendChild(p);
+          });
+
+          container.appendChild(div);
+        }
+      });
+
+      // Handle any categories not in the custom list (push them at the end)
+      Object.keys(categories).forEach(category => {
+        if (!categoryOrder.includes(category)) {
+          const div = document.createElement('div');
+          div.classList.add('menu-category');
+          div.innerHTML = `<h2>${category}</h2>`;
+
+          categories[category].sort((a, b) => a.itemName.localeCompare(b.itemName));
+          categories[category].forEach(item => {
+            const p = document.createElement('p');
+            p.textContent = `${item.itemName} - R${Number(item.price).toFixed(2)}`;
+            div.appendChild(p);
+          });
+
+          container.appendChild(div);
+        }
+      });
+    }
+
+    // Load menu when page opens
+    loadMenu();
+  </script>
+
+
+  <footer>
+    <p>&copy; 2026 La’Seddi C & Co</p>
+    <ul class="footer-links">
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="reviews.html">Reviews</a></li>
+      <li><a href="login.html">Staff</a></li>
+    </ul>
+    <div class="social-links">
+      <a href="https://www.instagram.com/_.sedds">Instagram</a> | <a href="https://www.tiktok.com/@pineapple.on.pizzaaaa">tiktok</a> | <a href="https://x.com/theee_sedds?s=11">Twitter</a>
+    </div>
+  </footer>
+</body>
+</html>

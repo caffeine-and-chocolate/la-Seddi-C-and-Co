@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Staff Login - La’Seddi C & Co</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo">
+      <img src="logo.png" alt="Restaurant Logo" class="nav-logo">
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="menu.html">Menu</a></li>
+      <li><a href="reservations.html">Reservations</a></li>
+      <li><a href="branches.html">Branches</a></li>
+      <li><a href="events.html">Events</a></li>
+      <li><a href="promotions.html">Promotions</a></li>
+    </ul>
+  </nav>
+  
+  <main>
+    <h1>Staff Login</h1>
+    <form id="loginForm">
+      <label>Username:</label>
+      <input type="text" name="username" required>
+      <label>Password:</label>
+      <input type="password" name="password" required>
+      <button type="submit">Login</button>
+    </form>
+  </main>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const formData = {
+        username: e.target.username.value,
+        password: e.target.password.value
+      };
+
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+
+      if (response.ok) {
+        alert('Login successful');
+        window.location.href = "/admin.html";
+      } else {
+        alert('Invalid credentials');
+      }
+    });
+  </script>
+</body>
+</html>

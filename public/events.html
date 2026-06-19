@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Events - La’Seddi C & Co</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">
+      <img src="logo.png" alt="Restaurant Logo" class="nav-logo">
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="menu.html">Menu</a></li>
+      <li><a href="reservations.html">Reservations</a></li>
+      <li><a href="branches.html">Branches</a></li>
+      <li><a href="promotions.html">Promotions</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <h1>Upcoming Events</h1>
+    <div id="eventsContainer"></div>
+  </main>
+
+  <div id="rsvpForm" style="display:none;">
+    <h3>RSVP</h3>
+    <form id="rsvpFormElement">
+      <input type="text" name="name" placeholder="Your Name" required>
+      <input type="email" name="email" placeholder="Your Email" required>
+      <input type="tel" name="phone" placeholder="Your Phone" required>
+      <select name="branch" required>
+        <option value="Midrand">Midrand</option>
+        <option value="Rosebank">Rosebank</option>
+        <option value="Hazelwood">Hazelwood</option>
+      </select>
+      <button type="submit">Submit RSVP</button>
+    </form>
+  </div>
+
+  <footer><!-- Reuse footer --></footer>
+
+  <script>
+    let currentEventId = null;
+
+    // Load events dynamically
+    async function loadEvents() {
+      const response = await fetch('/api/events');
+      const events = await response.json();
+      const container = document.getElementById('eventsContainer');
+      container.innerHTML = '';
+
+      events.forEach(event => {
+        const section = document.createElement('section');
+        section.innerHTML = `
+          <h2>${event.eventName}</h2>
+          <p>Date: ${new Date(event.eventDate).toLocaleDateString()}</p>
+          <p>${event.description}</p>
+          <button onclick="openRsvpForm(${event.id})">RSVP</button>
+        `;
+        container.appendChild(section);
+      });
+    }
+
+    function openRsvpForm(eventId) {
+      currentEventId = eventId;
+      document.getElementById('rsvpForm').style.display = 'block';
+    }
+
+    document.getElementById('rsvpFormElement').addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = {
+        name: e.target.name.value,
+        email: e.target.email.value,
+        phone: e.target.phone.value,
+        branch: e.target.branch.value
+      };
+
+      const response = await fetch(`/api/events/${currentEventId}/rsvp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        alert('RSVP submitted! Pending confirmation.');
+        document.getElementById('rsvpForm').style.display = 'none';
+      } else {
+        alert('Failed to RSVP.');
+      }
+    });
+
+    loadEvents();
+  </script>
+
+  <footer>
+    <p>&copy; 2026 La’Seddi C & Co</p>
+    <ul class="footer-links">
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="reviews.html">Reviews</a></li>
+      <li><a href="login.html">Staff</a></li>
+    </ul>
+    <div class="social-links">
+      <a href="https://www.instagram.com/_.sedds">Instagram</a> | <a href="https://www.tiktok.com/@pineapple.on.pizzaaaa">tiktok</a> | <a href="https://x.com/theee_sedds?s=11">Twitter</a>
+    </div>
+  </footer>
+</body>
+</html>
