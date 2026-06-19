@@ -31,14 +31,6 @@ app.use(express.json());
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// MySQL connection
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',      
-  password: '', 
-  database: 'restaurant_db'
-});
-
 // Helper function to format datetime
 function formatDateTime(input) {
   // Browser gives "2026-06-14T19:00"
