@@ -7,13 +7,21 @@ const nodemailer = require('nodemailer');
 
 const path = require('path');
 
+const db = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME
+});
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'lesediadm@gmail.com',       
-    pass: 'rdgj lfyg cksw rqwg'          
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
+
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
