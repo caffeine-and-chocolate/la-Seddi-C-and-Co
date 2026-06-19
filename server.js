@@ -7,12 +7,29 @@ const nodemailer = require('nodemailer');
 
 const path = require('path');
 
-const db = mysql.createConnection({
+const pool = mysql.createPool({
   host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
-  database: process.env.DB_NAME
+  database: process.env.DB_NAME,
+  ssl: { rejectUnauthorized: true },
+  waitForConnections: true,
+  connectionLimit: 5,
+  connectTimeout: 15000
 });
+
+pool.getConnection((err, conn) => {
+  if (err) {
+    console.error('DB connection error:', err.code || err.message);
+  } else {
+    console.log('Connected to Aiven MySQL');
+    conn.release();
+  }
+});
+
+module.exports = pool; // or use pool.query(...) in your routes
+
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
