@@ -68,7 +68,7 @@ function formatDateTime(input) {
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
-  db.query('SELECT * FROM staff WHERE username = ?', [username], (err, results) => {
+  pool.query('SELECT * FROM staff WHERE username = ?', [username], (err, results) => {
     if (err) return res.status(500).send('Database error');
     if (results.length === 0) return res.status(401).send('Invalid username or password');
 
@@ -98,7 +98,7 @@ app.post('/reservations', (req, res) => {
     AND reservationDate = ?
   `;
 
-  db.query(checkSql, [branch, formattedDate], (err, results) => {
+  pool.query(checkSql, [branch, formattedDate], (err, results) => {
     if (err) {
       console.error('Check error:', err.sqlMessage);
       return res.status(500).send('Database error: ' + err.sqlMessage);
@@ -116,7 +116,7 @@ app.post('/reservations', (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, 'Pending')
     `;
 
-    db.query(insertSql, [reservationName, contactNumber, email, formattedDate, quantity, branch], (err, result) => {
+    pool.query(insertSql, [reservationName, contactNumber, email, formattedDate, quantity, branch], (err, result) => {
       if (err) {
         console.error('Insert error:', err.sqlMessage);
         return res.status(500).send('Database error: ' + err.sqlMessage);
@@ -128,7 +128,7 @@ app.post('/reservations', (req, res) => {
 
 // Get all events
 app.get('/api/events', (req, res) => {
-  db.query('SELECT * FROM events', (err, results) => {
+  pool.query('SELECT * FROM events', (err, results) => {
     if (err) return res.status(500).send('Database error');
     res.json(results);
   });
@@ -136,10 +136,9 @@ app.get('/api/events', (req, res) => {
 
 app.post('/api/events', (req, res) => {
   const { eventName, eventDate, description, branch } = req.body;
-
   const formattedDate = formatDateTime(eventDate);
 
-  db.query(
+  pool.query(
     'INSERT INTO events (eventName, eventDate, description, branch) VALUES (?, ?, ?, ?)',
     [eventName, formattedDate, description, branch],
     (err) => {
@@ -152,11 +151,12 @@ app.post('/api/events', (req, res) => {
   );
 });
 
+
 // Update event (admin)
 app.put('/api/events/:id', (req, res) => {
   const { id } = req.params;
   const { eventName, eventDate, description, branch } = req.body;
-  db.query(
+  pool.query(
     'UPDATE events SET eventName=?, eventDate=?, description=?, branch=? WHERE id=?',
     [eventName, eventDate, description, branch, id],
     (err) => {
@@ -169,7 +169,7 @@ app.put('/api/events/:id', (req, res) => {
 // Delete event (admin)
 app.delete('/api/events/:id', (req, res) => {
   const { id } = req.params;
-  db.query('DELETE FROM events WHERE id=?', [id], (err) => {
+  pool.query('DELETE FROM events WHERE id=?', [id], (err) => {
     if (err) return res.status(500).send('Database error');
     res.send('Event deleted');
   });
@@ -186,7 +186,7 @@ app.get('/api/admin/reservations/:branch', (req, res) => {
     ORDER BY reservationDate ASC
   `;
 
-  db.query(sql, [branch], (err, results) => {
+  pool.query(sql, [branch], (err, results) => {
     if (err) {
       console.error('Admin reservations error:', err.sqlMessage);
       return res.status(500).send('Database error: ' + err.sqlMessage);
@@ -202,14 +202,14 @@ app.put('/api/admin/reservations/:id', (req, res) => {
 
   const sql = `UPDATE reservations SET status = ? WHERE id = ?`;
 
-  db.query(sql, [status, id], (err, result) => {
+  pool.query(sql, [status, id], (err, result) => {
     if (err) {
       console.error('Update status error:', err.sqlMessage);
       return res.status(500).send('Database error: ' + err.sqlMessage);
     }
 
     // Fetch reservation details to email customer
-    db.query(`SELECT * FROM reservations WHERE id = ?`, [id], (err, rows) => {
+    pool.query(`SELECT * FROM reservations WHERE id = ?`, [id], (err, rows) => {
       if (err || rows.length === 0) {
         return res.send(`Reservation ${status}, but failed to fetch details.`);
       }
@@ -249,7 +249,7 @@ app.post('/api/events/:eventId/rsvp', (req, res) => {
     INSERT INTO rsvps (eventId, name, email, phone, branch, status)
     VALUES (?, ?, ?, ?, ?, 'Pending')
   `;
-  db.query(sql, [eventId, name, email, phone, branch], (err) => {
+  pool.query(sql, [eventId, name, email, phone, branch], (err) => {
     if (err) {
       console.error('RSVP insert error:', err.sqlMessage);
       return res.status(500).send('Database error: ' + err.sqlMessage);
@@ -257,7 +257,7 @@ app.post('/api/events/:eventId/rsvp', (req, res) => {
 
     // Fetch event name
     const eventSql = `SELECT eventName FROM events WHERE id = ?`;
-    db.query(eventSql, [eventId], (err, results) => {
+    pool.query(eventSql, [eventId], (err, results) => {
       if (err || results.length === 0) {
         console.error('Event lookup error:', err?.sqlMessage || 'No event found');
         return res.status(500).send('Could not fetch event details');
@@ -297,7 +297,7 @@ La’Seddi C & Co`
 // Admin: view RSVPs per branch & event
 app.get('/api/rsvps/:branch/:eventId', (req, res) => {
   const { branch, eventId } = req.params;
-  db.query('SELECT * FROM rsvps WHERE branch=? AND eventId=?', [branch, eventId], (err, results) => {
+  pool.query('SELECT * FROM rsvps WHERE branch=? AND eventId=?', [branch, eventId], (err, results) => {
     if (err) return res.status(500).send('Database error');
     res.json(results);
   });
@@ -309,14 +309,14 @@ app.put('/api/rsvps/:id', (req, res) => {
   const { status } = req.body;
 
   // Update RSVP status
-  db.query('UPDATE rsvps SET status=? WHERE id=?', [status, id], (err) => {
+  pool.query('UPDATE rsvps SET status=? WHERE id=?', [status, id], (err) => {
     if (err) {
       console.error('RSVP update error:', err.sqlMessage);
       return res.status(500).send('Database error: ' + err.sqlMessage);
     }
 
     // Fetch RSVP details
-    db.query('SELECT * FROM rsvps WHERE id=?', [id], (err, rows) => {
+    pool.query('SELECT * FROM rsvps WHERE id=?', [id], (err, rows) => {
       if (err || rows.length === 0) {
         return res.send(`RSVP ${status}, but failed to fetch details.`);
       }
@@ -351,7 +351,7 @@ La’Seddi C & Co`
 // Admin: load RSVPs per branch & event
 app.get('/api/admin/rsvps/:branch/:eventId', (req, res) => {
   const { branch, eventId } = req.params;
-  db.query('SELECT * FROM rsvps WHERE branch=? AND eventId=?', [branch, eventId], (err, results) => {
+  pool.query('SELECT * FROM rsvps WHERE branch=? AND eventId=?', [branch, eventId], (err, results) => {
     if (err) return res.status(500).send('Database error');
     res.json(results);
   });
@@ -361,7 +361,7 @@ app.get('/api/admin/rsvps/:branch/:eventId', (req, res) => {
 app.put('/api/admin/rsvps/:id', (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  db.query('UPDATE rsvps SET status=? WHERE id=?', [status, id], (err) => {
+  pool.query('UPDATE rsvps SET status=? WHERE id=?', [status, id], (err) => {
     if (err) return res.status(500).send('Database error');
     res.send(`RSVP ${status}`);
   });
@@ -369,7 +369,7 @@ app.put('/api/admin/rsvps/:id', (req, res) => {
 
 // Get all promotions
 app.get('/api/promotions', (req, res) => {
-  db.query('SELECT * FROM promotions', (err, results) => {
+  pool.query('SELECT * FROM promotions', (err, results) => {
     if (err) return res.status(500).send('Database error');
     res.json(results);
   });
@@ -389,7 +389,7 @@ app.post('/api/promotions', (req, res) => {
   // Debugging logs for formatted dates
   console.log('Formatted dates:', formattedStart, formattedEnd);
 
-  db.query(
+  pool.query(
     'INSERT INTO promotions (title, description, startDate, endDate, branch) VALUES (?, ?, ?, ?, ?)',
     [title, description, formattedStart, formattedEnd, branch],
     (err) => {
@@ -406,7 +406,7 @@ app.post('/api/promotions', (req, res) => {
 app.put('/api/promotions/:id', (req, res) => {
   const { id } = req.params;
   const { title, description, startDate, endDate, branch } = req.body;
-  db.query(
+  pool.query(
     'UPDATE promotions SET title=?, description=?, startDate=?, endDate=?, branch=? WHERE id=?',
     [title, description, startDate, endDate, branch, id],
     (err) => {
@@ -419,7 +419,7 @@ app.put('/api/promotions/:id', (req, res) => {
 // Delete promotion
 app.delete('/api/promotions/:id', (req, res) => {
   const { id } = req.params;
-  db.query('DELETE FROM promotions WHERE id=?', [id], (err) => {
+  pool.query('DELETE FROM promotions WHERE id=?', [id], (err) => {
     if (err) return res.status(500).send('Database error');
     res.send('Promotion deleted');
   });
@@ -427,7 +427,7 @@ app.delete('/api/promotions/:id', (req, res) => {
 
 // Get all menu items
 app.get('/api/menu', (req, res) => {
-  db.query('SELECT * FROM menuitems', (err, results) => {
+  pool.query('SELECT * FROM menuitems', (err, results) => {
     if (err) return res.status(500).send('Database error: ' + err.sqlMessage);
     res.json(results);
   });
@@ -439,7 +439,7 @@ app.post('/api/menu', (req, res) => {
   
   console.log('Incoming menu item:', req.body);
   
-  db.query(
+  pool.query(
     'INSERT INTO menuitems (itemName, description, price, category) VALUES (?, ?, ?, ?)',
     [itemName, description, price, category],
     (err) => {
@@ -456,7 +456,7 @@ app.post('/api/menu', (req, res) => {
 app.put('/api/menu/:id', (req, res) => {
   const { id } = req.params;
   const { itemName, description, price, category } = req.body;
-  db.query(
+  pool.query(
     'UPDATE menuitems SET itemName=?, description=?, price=?, category=? WHERE id=?',
     [itemName, description, price, category, id],
     (err) => {
@@ -469,7 +469,7 @@ app.put('/api/menu/:id', (req, res) => {
 // Delete menu item
 app.delete('/api/menu/:id', (req, res) => {
   const { id } = req.params;
-  db.query('DELETE FROM menuitems WHERE id=?', [id], (err) => {
+  pool.query('DELETE FROM menuitems WHERE id=?', [id], (err) => {
     if (err) return res.status(500).send('Database error: ' + err.sqlMessage);
     res.send('Menu item deleted');
   });
@@ -477,7 +477,7 @@ app.delete('/api/menu/:id', (req, res) => {
 
 // Get all reviews
 app.get('/api/reviews', (req, res) => {
-  db.query('SELECT * FROM reviews ORDER BY createdAt DESC', (err, results) => {
+  pool.query('SELECT * FROM reviews ORDER BY createdAt DESC', (err, results) => {
     if (err) return res.status(500).send('Database error: ' + err.sqlMessage);
     res.json(results);
   });
@@ -486,7 +486,7 @@ app.get('/api/reviews', (req, res) => {
 // Add new review (customer)
 app.post('/api/reviews', (req, res) => {
   const { customerName, rating, feedback } = req.body;
-  db.query(
+  pool.query(
     'INSERT INTO reviews (customerName, rating, feedback) VALUES (?, ?, ?)',
     [customerName, rating, feedback],
     (err) => {
@@ -500,7 +500,7 @@ app.post('/api/reviews', (req, res) => {
 app.put('/api/reviews/:id/response', (req, res) => {
   const { id } = req.params;
   const { adminResponse } = req.body;
-  db.query(
+  pool.query(
     'UPDATE reviews SET adminResponse=? WHERE id=?',
     [adminResponse, id],
     (err) => {
@@ -513,7 +513,7 @@ app.put('/api/reviews/:id/response', (req, res) => {
 // Admin: delete review
 app.delete('/api/reviews/:id', (req, res) => {
   const { id } = req.params;
-  db.query('DELETE FROM reviews WHERE id=?', [id], (err) => {
+  pool.query('DELETE FROM reviews WHERE id=?', [id], (err) => {
     if (err) return res.status(500).send('Database error: ' + err.sqlMessage);
     res.send('Review deleted');
   });
@@ -521,7 +521,7 @@ app.delete('/api/reviews/:id', (req, res) => {
 
 // Get all contact messages (admin)
 app.get('/api/contacts', (req, res) => {
-  db.query('SELECT * FROM contacts ORDER BY createdAt DESC', (err, results) => {
+  pool.query('SELECT * FROM contacts ORDER BY createdAt DESC', (err, results) => {
     if (err) return res.status(500).send('Database error: ' + err.sqlMessage);
     res.json(results);
   });
@@ -533,7 +533,7 @@ app.post('/api/contacts', (req, res) => {
 
   console.log('Incoming contact message:', req.body);
 
-  db.query(
+  pool.query(
     'INSERT INTO contacts (name, email, message) VALUES (?, ?, ?)',
     [name, email, message],
     (err) => {
@@ -549,7 +549,7 @@ app.post('/api/contacts', (req, res) => {
 // Delete contact message (admin)
 app.delete('/api/contacts/:id', (req, res) => {
   const { id } = req.params;
-  db.query('DELETE FROM contacts WHERE id=?', [id], (err) => {
+  pool.query('DELETE FROM contacts WHERE id=?', [id], (err) => {
     if (err) return res.status(500).send('Database error: ' + err.sqlMessage);
     res.send('Contact message deleted');
   });
