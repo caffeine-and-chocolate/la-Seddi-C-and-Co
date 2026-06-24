@@ -13,7 +13,7 @@ app.post('/reservations', (req, res) => {
     AND reservationDate = ?
   `;
 
-  db.query(checkSql, [branch, formattedDate], (err, results) => {
+  pool.query(checkSql, [branch, formattedDate], (err, results) => {
     if (err) {
       console.error('Check error:', err.sqlMessage);
       return res.status(500).send('Database error: ' + err.sqlMessage);
@@ -31,7 +31,7 @@ app.post('/reservations', (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, 'Pending')
     `;
 
-    db.query(insertSql, [reservationName, contactNumber, email, formattedDate, quantity, branch], (err, result) => {
+    pool.query(insertSql, [reservationName, contactNumber, email, formattedDate, quantity, branch], (err, result) => {
       if (err) {
         console.error('Insert error:', err.sqlMessage);
         return res.status(500).send('Database error: ' + err.sqlMessage);

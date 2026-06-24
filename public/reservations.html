@@ -53,53 +53,53 @@
     <!-- Reuse footer -->
   </footer>
 
-  <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('reservationForm');
-  form.addEventListener('submit', async function(e) {
-    e.preventDefault();
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('reservationForm');
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
 
-    const formData = {
-      reservationName: document.querySelector('[name="reservationName"]').value,
-      contactNumber: document.querySelector('[name="contactNumber"]').value,
-      email: document.querySelector('[name="email"]').value,
-      reservationDate: document.getElementById('reservationDate').value,
-      quantity: document.querySelector('[name="quantity"]').value,
-      branch: document.querySelector('[name="branch"]').value
-    };
+      const formData = {
+        reservationName: document.querySelector('[name="reservationName"]').value,
+        contactNumber: document.querySelector('[name="contactNumber"]').value,
+        email: document.querySelector('[name="email"]').value,
+        reservationDate: document.getElementById('reservationDate').value,
+        quantity: document.querySelector('[name="quantity"]').value,
+        branch: document.querySelector('[name="branch"]').value
+      };
 
-    console.log('Form data being sent:', formData);
+      console.log('Form data being sent:', formData);
 
-    try {
-      const response = await fetch('reservations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      try {
+        const response = await fetch('reservations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
 
-      let message;
-      if (response.status === 409) {
-        message = await response.text();
-      } else if (response.ok) {
-        message = 'Reservation successful! Pending confirmation.';
-      } else {
-        message = 'Reservation failed. Please try again.';
+        let message;
+        if (response.status === 409) {
+          message = await response.text();
+        } else if (response.ok) {
+          message = 'Reservation successful! Pending confirmation.';
+        } else {
+          message = 'Reservation failed. Please try again.';
+        }
+
+        alert(message + '\n\nYou will be redirected to the homepage in 3 seconds.');
+
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 3000);
+
+      } catch (error) {
+        alert('Reservation failed due to a network error.\n\nYou will be redirected to the homepage in 3 seconds.');
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 3000);
       }
-
-      alert(message + '\n\nYou will be redirected to the homepage in 3 seconds.');
-
-      setTimeout(() => {
-        window.location.href = 'index.html';
-      }, 3000);
-
-    } catch (error) {
-      alert('Reservation failed due to a network error.\n\nYou will be redirected to the homepage in 3 seconds.');
-      setTimeout(() => {
-        window.location.href = 'index.html';
-      }, 3000);
-    }
+    });
   });
-});
 </script>
 
 <footer>

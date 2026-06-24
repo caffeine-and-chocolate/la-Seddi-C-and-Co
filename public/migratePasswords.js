@@ -10,7 +10,7 @@ const db = mysql.createConnection({
 });
 
 // Fetch all staff records
-db.query('SELECT id, username, password FROM staff', async (err, results) => {
+pool.query('SELECT id, username, password FROM staff', async (err, results) => {
   if (err) {
     console.error('Error fetching staff:', err);
     return;
@@ -29,7 +29,7 @@ db.query('SELECT id, username, password FROM staff', async (err, results) => {
       const hashed = await bcrypt.hash(currentPassword, 10);
 
       // Update DB with hashed password
-      db.query('UPDATE staff SET password=? WHERE id=?', [hashed, staff.id], (err2) => {
+      pool.query('UPDATE staff SET password=? WHERE id=?', [hashed, staff.id], (err2) => {
         if (err2) {
           console.error(`Error updating ${staff.username}:`, err2);
         } else {
