@@ -10,7 +10,7 @@ const db = mysql.createConnection({
 });
 
 // Fetch all staff records
-pool.query('SELECT id, username, password FROM staff', async (err, results) => {
+db.query('SELECT id, username, password FROM staff', async (err, results) => {
   if (err) {
     console.error('Error fetching staff:', err);
     return;
