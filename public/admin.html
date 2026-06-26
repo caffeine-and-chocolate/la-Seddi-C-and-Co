@@ -146,12 +146,20 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
       });
-      const data = await response.json();
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        alert('Unexpected server response');
+        return;
+      }
+
       if (response.ok && data.success) {
-        alert(data.message); // shows "Reservation Confirmed and customer notified."
-        document.getElementById('loadReservations').click(); // refresh table
+        alert(data.message);
+        document.getElementById('loadReservations').click();
       } else {
-        alert('Failed: ' + data.message);
+        alert('Failed: ' + (data.message || 'Unknown error'));
       }
     }
 
