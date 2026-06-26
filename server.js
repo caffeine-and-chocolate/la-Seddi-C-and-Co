@@ -230,12 +230,13 @@ La’Seddi C & Co`
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error('Email error:', error.message, error);
-          return res.status(500).send(`Reservation ${status}, but email failed: ${error.message}`);
+          return res.status(500).json({ success: false, message: `Reservation ${status}, but email failed: ${error.message}` });
         } else {
           console.log('Email sent:', info.response);
-          return res.send(`Reservation ${status} and customer notified.`);
+          return res.json({ success: true, message: `Reservation ${status} and customer notified.` });
         }
       });
+
     });
   });
 });
