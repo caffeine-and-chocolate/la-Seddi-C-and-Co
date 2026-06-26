@@ -255,13 +255,23 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
       });
-      if (response.ok) {
-        alert(`RSVP ${status}`);
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        alert('Unexpected server response');
+        return;
+      }
+
+      if (response.ok && data.success) {
+        alert(data.message);
         loadRsvps();
       } else {
-        alert('Failed to update RSVP');
+        alert('Failed: ' + (data.message || 'Unknown error'));
       }
     }
+
 
     async function loadPromotions() {
       const response = await fetch('/api/promotions');
