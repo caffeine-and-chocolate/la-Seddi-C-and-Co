@@ -216,7 +216,7 @@ app.put('/api/admin/reservations/:id', (req, res) => {
 
       const reservation = rows[0];
       const mailOptions = {
-        from: 'lesediadm@gmail.com',
+        from: process.env.EMAIL_USER,
         to: reservation.email,
         subject: `Reservation ${status} - La’Seddi C & Co`,
         text: `Dear ${reservation.reservationName},
@@ -230,12 +230,12 @@ La’Seddi C & Co`
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error('Email error:', error.message, error);
+          return res.status(500).send(`Reservation ${status}, but email failed: ${error.message}`);
         } else {
           console.log('Email sent:', info.response);
+          return res.send(`Reservation ${status} and customer notified.`);
         }
       });
-
-      res.send(`Reservation ${status} and customer notified.`);
     });
   });
 });
@@ -266,7 +266,7 @@ app.post('/api/events/:eventId/rsvp', (req, res) => {
       const eventName = results[0].eventName;
 
       const mailOptions = {
-        from: 'lesediadm@gmail.com',
+        from: process.env.EMAIL_USER,
         to: email,
         subject: `RSVP Received - La’Seddi C & Co`,
         text: `Dear ${name},
@@ -283,13 +283,13 @@ La’Seddi C & Co`
 
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
-          console.error('RSVP email error:', error);
+          console.error('Email error:', error.message, error);
+          return res.status(500).send(`Reservation ${status}, but email failed: ${error.message}`);
         } else {
-          console.log('RSVP email sent:', info.response);
+          console.log('Email sent:', info.response);
+          return res.send(`Reservation ${status} and customer notified.`);
         }
       });
-
-      res.send('RSVP submitted and email sent.');
     });
   });
 });
