@@ -35,12 +35,18 @@ module.exports = pool;
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.sendgrid.net',
-  port: 587, 
+  port: 587,
+  secure: false,               
+  requireTLS: true,
   auth: {
-    user: 'apikey', 
+    user: 'apikey',            
     pass: process.env.SENDGRID_API_KEY
-  }
+  },
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000
 });
+
 
 transporter.verify((err, success) => {
   if (err) {
@@ -50,7 +56,6 @@ transporter.verify((err, success) => {
   }
 });
 
-
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -58,6 +63,25 @@ app.use(bodyParser.json());
 app.use(express.json());
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/_test/sendgrid', (req, res) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: process.env.EMAIL_USER,
+    subject: 'Test email from app',
+    text: 'This is a SendGrid test from the server.'
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error('Test email error:', error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+    console.log('Test email sent:', info.response);
+    return res.json({ success: true, info: info.response });
+  });
+});
+
 
 // Helper function to format datetime
 function formatDateTime(input) {
@@ -254,20 +278,18 @@ app.post('/api/events/:eventId/rsvp', (req, res) => {
   `;
   pool.query(sql, [eventId, name, email, phone, branch], (err) => {
     if (err) {
-      console.error('RSVP insert error:', err.sqlMessage);
-      return res.status(500).send('Database error: ' + err.sqlMessage);
+      console.error('RSVP insert error:', err.sqlMessage || err);
+      return res.status(500).json({ success: false, message: 'Database error' });
     }
 
-    // Fetch event name
     const eventSql = `SELECT eventName FROM events WHERE id = ?`;
     pool.query(eventSql, [eventId], (err, results) => {
       if (err || results.length === 0) {
         console.error('Event lookup error:', err?.sqlMessage || 'No event found');
-        return res.status(500).send('Could not fetch event details');
+        return res.status(500).json({ success: false, message: 'Could not fetch event details' });
       }
 
       const eventName = results[0].eventName;
-
       const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
@@ -286,16 +308,16 @@ La’Seddi C & Co`
 
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
-          console.error('Email error:', error.message, error);
-          return res.status(500).send(`Reservation ${status}, but email failed: ${error.message}`);
-        } else {
-          console.log('Email sent:', info.response);
-          return res.send(`Reservation ${status} and customer notified.`);
+          console.error('RSVP test email error:', error);
+          return res.status(500).json({ success: false, message: `RSVP saved but email failed: ${error.message}` });
         }
+        console.log('RSVP email sent:', info.response);
+        return res.json({ success: true, message: 'RSVP saved and confirmation email sent.' });
       });
     });
   });
 });
+
 
 // Admin: view RSVPs per branch & event
 app.get('/api/rsvps/:branch/:eventId', (req, res) => {
@@ -311,22 +333,21 @@ app.put('/api/rsvps/:id', (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
-  // Update RSVP status
   pool.query('UPDATE rsvps SET status=? WHERE id=?', [status, id], (err) => {
     if (err) {
-      console.error('RSVP update error:', err.sqlMessage);
-      return res.status(500).send('Database error: ' + err.sqlMessage);
+      console.error('RSVP update error:', err.sqlMessage || err);
+      return res.status(500).json({ success: false, message: 'Database error' });
     }
 
-    // Fetch RSVP details
     pool.query('SELECT * FROM rsvps WHERE id=?', [id], (err, rows) => {
       if (err || rows.length === 0) {
-        return res.send(`RSVP ${status}, but failed to fetch details.`);
+        console.error('Fetch RSVP error:', err || 'no rows');
+        return res.status(500).json({ success: false, message: 'Failed to fetch RSVP' });
       }
 
       const rsvp = rows[0];
       const mailOptions = {
-        from: 'lesediadm@gmail.com',
+        from: process.env.EMAIL_USER,
         to: rsvp.email,
         subject: `RSVP ${status} - La’Seddi C & Co`,
         text: `Dear ${rsvp.name},
@@ -340,16 +361,14 @@ La’Seddi C & Co`
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error('RSVP email error:', error);
-        } else {
-          console.log('RSVP email sent:', info.response);
+          return res.status(500).json({ success: false, message: `RSVP ${status}, but email failed: ${error.message}` });
         }
+        console.log('RSVP email sent:', info.response);
+        return res.json({ success: true, message: `RSVP ${status} and customer notified.` });
       });
-
-      res.send(`RSVP ${status} and customer notified.`);
     });
   });
 });
-
 
 // Admin: load RSVPs per branch & event
 app.get('/api/admin/rsvps/:branch/:eventId', (req, res) => {
