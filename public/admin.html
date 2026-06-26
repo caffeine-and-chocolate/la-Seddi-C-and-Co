@@ -146,11 +146,12 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
       });
-      if (response.ok) {
-        alert(`Reservation ${status}`);
-        document.getElementById('loadReservations').click();
+      const data = await response.json();
+      if (response.ok && data.success) {
+        alert(data.message); // shows "Reservation Confirmed and customer notified."
+        document.getElementById('loadReservations').click(); // refresh table
       } else {
-        alert('Failed to update reservation');
+        alert('Failed: ' + data.message);
       }
     }
 
