@@ -229,7 +229,7 @@ La’Seddi C & Co`
 
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
-          console.error('Email error:', error);
+          console.error('Email error:', error.message, error);
         } else {
           console.log('Email sent:', info.response);
         }
