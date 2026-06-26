@@ -35,12 +35,21 @@ module.exports = pool;
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.sendgrid.net',
-  port: 587, // TLS recommended
+  port: 587, 
   auth: {
-    user: 'apikey', // literally the string "apikey"
+    user: 'apikey', 
     pass: process.env.SENDGRID_API_KEY
   }
 });
+
+transporter.verify((err, success) => {
+  if (err) {
+    console.error('Transporter verify failed:', err);
+  } else {
+    console.log('Transporter verified, ready to send emails');
+  }
+});
+
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -201,17 +210,16 @@ app.put('/api/admin/reservations/:id', (req, res) => {
   const { status } = req.body;
 
   const sql = `UPDATE reservations SET status = ? WHERE id = ?`;
-
-  pool.query(sql, [status, id], (err, result) => {
+  pool.query(sql, [status, id], (err) => {
     if (err) {
-      console.error('Update status error:', err.sqlMessage);
-      return res.status(500).send('Database error: ' + err.sqlMessage);
+      console.error('Update status error:', err.sqlMessage || err);
+      return res.status(500).json({ success: false, message: 'Database error' });
     }
 
-    // Fetch reservation details to email customer
     pool.query(`SELECT * FROM reservations WHERE id = ?`, [id], (err, rows) => {
       if (err || rows.length === 0) {
-        return res.send(`Reservation ${status}, but failed to fetch details.`);
+        console.error('Fetch reservation error:', err || 'no rows');
+        return res.status(500).json({ success: false, message: 'Failed to fetch reservation' });
       }
 
       const reservation = rows[0];
@@ -219,27 +227,21 @@ app.put('/api/admin/reservations/:id', (req, res) => {
         from: process.env.EMAIL_USER,
         to: reservation.email,
         subject: `Reservation ${status} - La’Seddi C & Co`,
-        text: `Dear ${reservation.reservationName},
-
-Your reservation at ${reservation.branch} on ${reservation.reservationDate} has been ${status}.
-
-Thank you,
-La’Seddi C & Co`
+        text: `Dear ${reservation.reservationName},\n\nYour reservation has been ${status}.\n\nThanks`
       };
 
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
-          console.error('Email error:', error.message, error);
+          console.error('Email error:', error);
           return res.status(500).json({ success: false, message: `Reservation ${status}, but email failed: ${error.message}` });
-        } else {
-          console.log('Email sent:', info.response);
-          return res.json({ success: true, message: `Reservation ${status} and customer notified.` });
         }
+        console.log('Email sent:', info.response);
+        return res.json({ success: true, message: `Reservation ${status} and customer notified.` });
       });
-
     });
   });
 });
+
 
 // Add RSVP
 app.post('/api/events/:eventId/rsvp', (req, res) => {
