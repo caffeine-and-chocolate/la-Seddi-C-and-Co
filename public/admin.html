@@ -10,38 +10,6 @@
   <main>
     <h1>Admin Dashboard</h1>
 
-    <!-- Admin navigation -->
-    <nav id="adminNav" class="admin-nav">
-      <ul>
-        <li><a href="#manageRsvp" data-panel="manageRsvp" class="admin-link">Manage RSVPs</a></li>
-        <li><a href="#manageEvents" data-panel="manageEvents" class="admin-link">Manage Events</a></li>
-        <li><a href="#manageMenu" data-panel="manageMenu" class="admin-link">Manage Menu</a></li>
-        <li><a href="#settings" data-panel="settings" class="admin-link">Settings</a></li>
-      </ul>
-    </nav>
-
-    <!-- Panels (put your existing content inside these) -->
-    <section id="manageRsvp" class="admin-panel" aria-hidden="true" style="display:none;">
-      <h2>Manage RSVPs</h2>
-      <!-- existing RSVP management UI goes here -->
-    </section>
-
-    <section id="manageEvents" class="admin-panel" aria-hidden="true" style="display:none;">
-      <h2>Manage Events</h2>
-      <!-- existing Events UI goes here -->
-    </section>
-
-    <section id="manageMenu" class="admin-panel" aria-hidden="true" style="display:none;">
-      <h2>Manage Menu</h2>
-      <!-- your existing Manage Menu form and table go here -->
-    </section>
-
-    <section id="settings" class="admin-panel" aria-hidden="true" style="display:none;">
-      <h2>Settings</h2>
-      <!-- optional settings content -->
-    </section>
-
-
     <!-- Reservations Section -->
     <section id="reservations">
       <h2>Reservations</h2>
@@ -176,53 +144,6 @@
   </main>
 
   <script>
-
-    // Panels show/hide logic
-    (function() {
-      const links = document.querySelectorAll('.admin-link');
-      const panels = document.querySelectorAll('.admin-panel');
-
-      function showPanel(id, pushState = true) {
-        panels.forEach(p => {
-          const visible = p.id === id;
-          p.style.display = visible ? '' : 'none';
-          p.setAttribute('aria-hidden', visible ? 'false' : 'true');
-        });
-        links.forEach(a => a.classList.toggle('active', a.dataset.panel === id));
-        if (pushState) {
-          history.replaceState(null, '', '#' + id);
-        }
-        // focus first focusable element in panel for accessibility
-        const panel = document.getElementById(id);
-        if (panel) {
-          const focusable = panel.querySelector('button, a, input, textarea, select');
-          if (focusable) focusable.focus();
-        }
-      }
-
-      // Click handlers
-      links.forEach(link => {
-        link.addEventListener('click', e => {
-          e.preventDefault();
-          const panelId = link.dataset.panel;
-          showPanel(panelId);
-        });
-      });
-
-      // Show panel from hash on load
-      window.addEventListener('DOMContentLoaded', () => {
-        const hash = location.hash.replace('#', '');
-        const initial = hash || links[0].dataset.panel;
-        showPanel(initial, false);
-      });
-
-      // Optional: respond to back/forward navigation
-      window.addEventListener('hashchange', () => {
-        const id = location.hash.replace('#', '') || links[0].dataset.panel;
-        showPanel(id, false);
-      });
-    })();
-
     // ---------------- Reservations ----------------
     document.getElementById('loadReservations').addEventListener('click', async () => {
       const branch = document.getElementById('branchSelect').value;
