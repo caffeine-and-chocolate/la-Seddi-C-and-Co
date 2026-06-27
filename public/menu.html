@@ -38,75 +38,71 @@
       const categories = {};
       menuItems.forEach(item => {
         const categoryName = (item.category || 'Uncategorized').trim();
-        if (!categories[categoryName]) {
-          categories[categoryName] = [];
-        }
+        if (!categories[categoryName]) categories[categoryName] = [];
         categories[categoryName].push(item);
       });
 
-      // Clear container
       container.innerHTML = '';
 
-      // Custom category order
       const categoryOrder = [
-        "Starters",
-        "Salads",
-        "Vegan",
-        "Vegetarian",
-        "Burgers",
-        "Poultry",
-        "Seafood",
-        "Grills",
-        "Combos",
-        "Sides",
-        "Extras",
-        "Desserts",
-        "Hot Beverages",
-        "Alcoholic Beverages"
+        "Starters","Salads","Vegan","Vegetarian","Burgers","Poultry",
+        "Seafood","Grills","Combos","Sides","Extras","Desserts",
+        "Hot Beverages","Alcoholic Beverages"
       ];
+
+      function renderCategory(category, items) {
+        const div = document.createElement('div');
+        div.classList.add('menu-category');
+        div.innerHTML = `<h2>${category}</h2>`;
+        items.sort((a, b) => a.itemName.localeCompare(b.itemName));
+        items.forEach(item => {
+          const itemEl = document.createElement('div');
+          itemEl.classList.add('menu-item');
+
+          const titleRow = document.createElement('div');
+          titleRow.classList.add('menu-item-title');
+          const nameEl = document.createElement('span');
+          nameEl.classList.add('menu-item-name');
+          nameEl.textContent = item.itemName;
+          const priceEl = document.createElement('span');
+          priceEl.classList.add('menu-item-price');
+          priceEl.textContent = `R${Number(item.price).toFixed(2)}`;
+          titleRow.appendChild(nameEl);
+          titleRow.appendChild(priceEl);
+
+          itemEl.appendChild(titleRow);
+
+          // Description (only if present)
+          if (item.description && item.description.trim() !== '') {
+            const descEl = document.createElement('div');
+            descEl.classList.add('menu-item-desc');
+            descEl.textContent = item.description;
+            itemEl.appendChild(descEl);
+          }
+
+          div.appendChild(itemEl);
+        });
+        return div;
+      }
 
       // Render categories in custom order
       categoryOrder.forEach(category => {
         if (categories[category]) {
-          const div = document.createElement('div');
-          div.classList.add('menu-category');
-          div.innerHTML = `<h2>${category}</h2>`;
-
-          // Sort items by name within each category
-          categories[category].sort((a, b) => a.itemName.localeCompare(b.itemName));
-
-          categories[category].forEach(item => {
-            const p = document.createElement('p');
-            p.textContent = `${item.itemName} - R${Number(item.price).toFixed(2)}`;
-            div.appendChild(p);
-          });
-
-          container.appendChild(div);
+          container.appendChild(renderCategory(category, categories[category]));
+          delete categories[category];
         }
       });
 
-      // Handle any categories not in the custom list (push them at the end)
-      Object.keys(categories).forEach(category => {
-        if (!categoryOrder.includes(category)) {
-          const div = document.createElement('div');
-          div.classList.add('menu-category');
-          div.innerHTML = `<h2>${category}</h2>`;
-
-          categories[category].sort((a, b) => a.itemName.localeCompare(b.itemName));
-          categories[category].forEach(item => {
-            const p = document.createElement('p');
-            p.textContent = `${item.itemName} - R${Number(item.price).toFixed(2)}`;
-            div.appendChild(p);
-          });
-
-          container.appendChild(div);
-        }
+      // Render remaining categories
+      Object.keys(categories).sort().forEach(category => {
+        container.appendChild(renderCategory(category, categories[category]));
       });
     }
 
     // Load menu when page opens
     loadMenu();
   </script>
+
 
 
   <footer>
