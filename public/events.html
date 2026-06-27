@@ -65,7 +65,13 @@
 
     function openRsvpForm(eventId) {
       currentEventId = eventId;
-      document.getElementById('rsvpForm').style.display = 'block';
+      const formContainer = document.getElementById('rsvpForm');
+      formContainer.classList.add('visible');
+      // optional: focus first input for accessibility
+      const firstInput = formContainer.querySelector('input, select, textarea');
+      if (firstInput) firstInput.focus();
+      // scroll into view smoothly
+      formContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     document.getElementById('rsvpFormElement').addEventListener('submit', async e => {
@@ -85,11 +91,14 @@
 
       if (response.ok) {
         alert('RSVP submitted! Pending confirmation.');
-        document.getElementById('rsvpForm').style.display = 'none';
+        // hide the form by removing the visible class
+        document.getElementById('rsvpForm').classList.remove('visible');
+        e.target.reset();
       } else {
         alert('Failed to RSVP.');
       }
     });
+
 
     loadEvents();
   </script>
