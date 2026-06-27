@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 let ca = process.env.DB_SSL_CA || null;
 
@@ -48,13 +50,13 @@ const transporter = nodemailer.createTransport({
 });
 
 
-transporter.verify((err, success) => {
-  if (err) {
-    console.error('Transporter verify failed:', err);
-  } else {
-    console.log('Transporter verified, ready to send emails');
-  }
-});
+// transporter.verify((err, success) => {
+//   if (err) {
+//     console.error('Transporter verify failed:', err);
+//   } else {
+//     console.log('Transporter verified, ready to send emails');
+//   }
+// });
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -65,21 +67,23 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/_test/sendgrid', (req, res) => {
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: process.env.EMAIL_USER,
-    subject: 'Test email from app',
-    text: 'This is a SendGrid test from the server.'
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error('Test email error:', error);
-      return res.status(500).json({ success: false, message: error.message });
+  app.get('/_test/sendgrid_api', async (req, res) => {
+    try {
+      await sgMail.send({
+        to: process.env.EMAIL_USER,
+        from: process.env.EMAIL_USER,
+        subject: 'SendGrid API test',
+        text: 'SendGrid API test from server'
+      });
+      console.log('SendGrid API test sent');
+      return res.json({ success: true, message: 'Test email sent' });
+    } catch (err) {
+      console.error('SendGrid API test error:', err);
+      const details = err?.response?.body || err.message || 'Unknown error';
+      return res.status(500).json({ success: false, message: details });
     }
-    console.log('Test email sent:', info.response);
-    return res.json({ success: true, info: info.response });
   });
+
 });
 
 
@@ -247,21 +251,30 @@ app.put('/api/admin/reservations/:id', (req, res) => {
       }
 
       const reservation = rows[0];
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
+      const msg = {
         to: reservation.email,
+        from: process.env.EMAIL_USER,
         subject: `Reservation ${status} - La’Seddi C & Co`,
-        text: `Dear ${reservation.reservationName},\n\nYour reservation has been ${status}.\n\nThanks`
+        text: `Dear ${reservation.reservationName},
+
+      Your reservation has been ${status}.
+
+      Thanks,
+      La’Seddi C & Co`
       };
 
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error('Email error:', error);
-          return res.status(500).json({ success: false, message: `Reservation ${status}, but email failed: ${error.message}` });
-        }
-        console.log('Email sent:', info.response);
-        return res.json({ success: true, message: `Reservation ${status} and customer notified.` });
-      });
+      sgMail
+        .send(msg)
+        .then(() => {
+          console.log('SendGrid API reservation email sent');
+          return res.json({ success: true, message: `Reservation ${status} and customer notified.` });
+        })
+        .catch(error => {
+          console.error('SendGrid API reservation error:', error);
+          const details = error?.response?.body || error.message || 'Unknown error';
+          return res.status(500).json({ success: false, message: `Reservation ${status}, but email failed: ${details}` });
+        });
+
     });
   });
 });
@@ -290,30 +303,34 @@ app.post('/api/events/:eventId/rsvp', (req, res) => {
       }
 
       const eventName = results[0].eventName;
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
+      const msg = {
         to: email,
+        from: process.env.EMAIL_USER,
         subject: `RSVP Received - La’Seddi C & Co`,
         text: `Dear ${name},
 
-Thank you for your RSVP for our event "${eventName}" at ${branch}.
-Your RSVP is currently marked as Pending. Our staff will confirm shortly.
+      Thank you for your RSVP for our event "${eventName}" at ${branch}.
+      Your RSVP is currently marked as Pending. Our staff will confirm shortly.
 
-Event ID: ${eventId}
-Contact: ${phone}
+      Event ID: ${eventId}
+      Contact: ${phone}
 
-Kind regards,
-La’Seddi C & Co`
+      Kind regards,
+      La’Seddi C & Co`
       };
 
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error('RSVP test email error:', error);
-          return res.status(500).json({ success: false, message: `RSVP saved but email failed: ${error.message}` });
-        }
-        console.log('RSVP email sent:', info.response);
-        return res.json({ success: true, message: 'RSVP saved and confirmation email sent.' });
-      });
+      sgMail
+        .send(msg)
+        .then(() => {
+          console.log('SendGrid API RSVP confirmation sent');
+          return res.json({ success: true, message: 'RSVP saved and confirmation email sent.' });
+        })
+        .catch(error => {
+          console.error('SendGrid API RSVP confirmation error:', error);
+          const details = error?.response?.body || error.message || 'Unknown error';
+          return res.status(500).json({ success: false, message: `RSVP saved but email failed: ${details}` });
+        });
+
     });
   });
 });
@@ -346,26 +363,31 @@ app.put('/api/rsvps/:id', (req, res) => {
       }
 
       const rsvp = rows[0];
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: rsvp.email,
-        subject: `RSVP ${status} - La’Seddi C & Co`,
-        text: `Dear ${rsvp.name},
+  const msg = {
+    to: rsvp.email,
+    from: process.env.EMAIL_USER,
+    subject: `RSVP ${status} - La’Seddi C & Co`,
+    text: `Dear ${rsvp.name},
 
-Your RSVP for the event at La'Seddi C & Co in ${rsvp.branch} has been ${status}.
+  Your RSVP for the event at La'Seddi C & Co in ${rsvp.branch} has been ${status}.
 
-Thank you,
-La’Seddi C & Co`
-      };
+  Thank you,
+  La’Seddi C & Co`
+  };
 
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error('RSVP email error:', error);
-          return res.status(500).json({ success: false, message: `RSVP ${status}, but email failed: ${error.message}` });
-        }
-        console.log('RSVP email sent:', info.response);
-        return res.json({ success: true, message: `RSVP ${status} and customer notified.` });
-      });
+  sgMail
+    .send(msg)
+    .then(() => {
+      console.log('SendGrid API RSVP email sent');
+      return res.json({ success: true, message: `RSVP ${status} and customer notified.` });
+    })
+    .catch(error => {
+      console.error('SendGrid API RSVP error:', error);
+      const details = error?.response?.body || error.message || 'Unknown error';
+      return res.status(500).json({ success: false, message: `RSVP ${status}, but email failed: ${details}` });
+    });
+
+
     });
   });
 });
